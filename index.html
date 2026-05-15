@@ -120,6 +120,13 @@ bottom:20px;
 left:250px;
 z-index:100;
 }
+
+#obsBtn{
+position:fixed;
+bottom:20px;
+left:380px;
+z-index:100;
+}
 </style>
 </head>
 
@@ -157,6 +164,7 @@ SHOW CAM
 
 <button id="pipBtn">POP OUT</button>
 <button id="cameraBtn">CAMERA</button>
+<button id="obsBtn">OBS LINK</button>
 
 <video
 id="video"
@@ -187,6 +195,8 @@ let showCamera=false;
 let currentDeviceId=null;
 let outputStream;
 let previousPose=[];
+let holistic;
+let cameraInstance;
 
 const isMobile=
 /Android|iPhone|iPad|iPod/i
@@ -206,17 +216,28 @@ return newPt;
 return{
 
 x:
-oldPt.x*0.7+
-newPt.x*0.3,
+oldPt.x*0.35+
+newPt.x*0.65,
 
 y:
-oldPt.y*0.7+
-newPt.y*0.3
+oldPt.y*0.35+
+newPt.y*0.65
 };
 }
 
 
 async function startCamera(){
+
+if(
+video.srcObject
+){
+
+video.srcObject
+.getTracks()
+.forEach(
+t=>t.stop()
+);
+}
 
 const stream=
 await navigator
@@ -253,13 +274,7 @@ video.videoHeight;
 canvas.style.aspectRatio=
 `${video.videoWidth}/${video.videoHeight}`;
 
-outputStream=
-canvas.captureStream(
-30
-);
-
-window.skeletonStream=
-outputStream;
+previousPose=[];
 
 document
 .getElementById(
@@ -268,6 +283,52 @@ document
 .classList.add(
 'active'
 );
+
+if(
+cameraInstance
+){
+cameraInstance.stop();
+}
+
+cameraInstance=
+new Camera(
+video,
+{
+
+onFrame:
+async()=>{
+
+if(
+holistic
+){
+
+await holistic.send({
+image:video
+});
+}
+},
+
+width:
+canvas.width,
+
+height:
+canvas.height
+});
+
+cameraInstance.start();
+
+if(
+!outputStream
+){
+
+outputStream=
+canvas.captureStream(
+60
+);
+
+window.skeletonStream=
+outputStream;
+}
 }
 
 
@@ -275,7 +336,7 @@ async function initTracker(){
 
 await startCamera();
 
-const holistic=
+holistic=
 new Holistic({
 
 locateFile:f=>
@@ -292,26 +353,6 @@ enableSegmentation:false
 holistic.onResults(
 r=>latestResults=r
 );
-
-new Camera(
-video,
-{
-
-onFrame:
-async()=>{
-
-await holistic.send({
-image:video
-});
-},
-
-width:
-canvas.width,
-
-height:
-canvas.height
-
-}).start();
 
 document
 .getElementById(
@@ -368,13 +409,33 @@ cams[
 Number(pick)
 ]?.deviceId;
 
-video.srcObject
-?.getTracks()
-.forEach(
-t=>t.stop()
+await startCamera();
+};
+
+
+document
+.getElementById(
+'obsBtn'
+).onclick=
+()=>{
+
+const obsWindow=
+window.open(
+window.location.href,
+'_blank',
+'width=1280,height=720'
 );
 
-await startCamera();
+if(
+obsWindow
+){
+
+alert(
+'In OBS:\n\nAdd Source → Browser Source\n\nPaste this URL:\n\n'+
+obsWindow.location.href+
+'\n\nSet width/height to 1920x1080'
+);
+}
 };
 
 
