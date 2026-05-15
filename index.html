@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -8,7 +8,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 
-<!-- ADDED -->
 <script>
 if ('documentPictureInPicture' in window) {
   console.log('Document Picture-in-Picture supported');
@@ -95,7 +94,9 @@ html,body{
 canvas{
   width:100%;
   height:100%;
-  object-fit:contain
+  object-fit:contain;
+  max-width:100vw;
+  max-height:100vh;
 }
 
 video{
@@ -134,7 +135,6 @@ button{
   font-family:'Orbitron'
 }
 
-/* ADDED */
 #pipBtn{
   position:fixed;
   bottom:20px;
@@ -178,7 +178,6 @@ style="position:fixed;bottom:20px;left:20px;z-index:100;padding:8px 12px;cursor:
 SHOW CAM
 </button>
 
-<!-- ADDED -->
 <button id="pipBtn">POP OUT</button>
 
 <div id="stats">
@@ -192,7 +191,6 @@ HANDS: <span id="hand-count">0</span>
 <button onclick="initTracker()">INITIALISE</button>
 </div>
 
-<!-- MOBILE FIX -->
 <video id="video"
 playsinline
 webkit-playsinline
@@ -220,12 +218,12 @@ let lastUIUpdate = 0;
 let lastInference = 0;
 let showCamera = false;
 
-/* ADDED */
 let pipWindow = null;
 let pipCanvas = null;
 let pipCtx = null;
 
-/* MOBILE SUPPORT ADDED */
+let outputStream = null;
+
 let isMobile =
   /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -245,13 +243,11 @@ function createBackground(){
   bg.beginPath();
 
   for(let x=0;x<canvas.width;x+=step){
-
     bg.moveTo(x,0);
     bg.lineTo(x,canvas.height);
   }
 
   for(let y=0;y<canvas.height;y+=step){
-
     bg.moveTo(0,y);
     bg.lineTo(canvas.width,y);
   }
@@ -261,7 +257,6 @@ function createBackground(){
 
 async function initTracker(){
 
-  /* MOBILE CAMERA SUPPORT ADDED */
   const stream = await navigator.mediaDevices.getUserMedia({
 
     audio:false,
@@ -278,7 +273,6 @@ async function initTracker(){
 
   video.srcObject = stream;
 
-  /* iPHONE SAFARI FIXES */
   video.setAttribute('playsinline', true);
   video.setAttribute('webkit-playsinline', true);
   video.muted = true;
@@ -288,11 +282,13 @@ async function initTracker(){
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
-  /* MOBILE ASPECT RATIO FIX */
   canvas.style.aspectRatio =
     `${video.videoWidth} / ${video.videoHeight}`;
 
   createBackground();
+
+  outputStream = canvas.captureStream(30);
+  window.skeletonStream = outputStream;
 
   document.getElementById('dot-cam')
     .classList.add('active');
@@ -343,12 +339,11 @@ async function initTracker(){
       showCamera ? 'HIDE CAM' : 'SHOW CAM';
   };
 
-  /* ADDED */
   document.getElementById('pipBtn').onclick = async ()=>{
 
     if(!('documentPictureInPicture' in window)){
 
-      alert('Picture-in-Picture not supported in this browser');
+      alert('Picture-in-Picture not supported');
 
       return;
     }
@@ -380,8 +375,6 @@ async function initTracker(){
 
     pipWindow.document.body.style.margin = '0';
 
-    pipWindow.document.body.style.background = '#0a0a14';
-
     pipWindow.document.body.appendChild(pipCanvas);
 
     pipWindow.addEventListener('pagehide', ()=>{
@@ -398,20 +391,6 @@ async function initTracker(){
 function renderLoop(ts){
 
   requestAnimationFrame(renderLoop);
-
-  frameCount++;
-
-  let fps = 0;
-
-  if(ts-lastFpsClock>1000){
-
-    fps =
-      Math.round(frameCount*1000/(ts-lastFpsClock));
-
-    frameCount = 0;
-
-    lastFpsClock = ts;
-  }
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -440,34 +419,6 @@ function renderLoop(ts){
 
   const pose = latestResults.poseLandmarks;
 
-  const leftHand =
-    latestResults.leftHandLandmarks;
-
-  const rightHand =
-    latestResults.rightHandLandmarks;
-
-  const detected = !!(pose && pose.length);
-
-  if(ts-lastUIUpdate>100){
-
-    lastUIUpdate = ts;
-
-    fpsEl.textContent =
-      fps || fpsEl.textContent;
-
-    jointEl.textContent =
-      pose ? pose.length : 0;
-
-    handEl.textContent =
-      (leftHand?1:0)+(rightHand?1:0);
-
-    detectDot.className =
-      'dot'+(detected?' detected':'');
-
-    detectEl.textContent =
-      detected ? 'TRACKING':'SCANNING';
-  }
-
   if(!pose || pose.length < 25) return;
 
   const JOINTS = pose.map(lm => ({
@@ -485,38 +436,29 @@ function renderLoop(ts){
     y:(JOINTS[23].y + JOINTS[24].y)/2
   };
 
-  const hasLegs =
-    (latestResults.poseLandmarks[27]?.visibility || 0) > 0.5 &&
-    (latestResults.poseLandmarks[28]?.visibility || 0) > 0.5;
-
-  if(hasLegs){
-
-    const leftAnkle = JOINTS[27];
-    const rightAnkle = JOINTS[28];
-
-    spineBase.x =
-      (JOINTS[23].x +
-      JOINTS[24].x +
-      leftAnkle.x +
-      rightAnkle.x) / 4;
-
-    spineBase.y =
-      (JOINTS[23].y +
-      JOINTS[24].y +
-      leftAnkle.y +
-      rightAnkle.y) / 4;
-  }
-
   const neck = {
-    x:(torsoTop.x + spineBase.x)/2,
-    y:(torsoTop.y + spineBase.y)/2
+    x:torsoTop.x,
+    y:torsoTop.y - 40
   };
 
-  /* FIXED + ADDED BODY CONNECTIONS */
+  const extraPoints = {
+
+    neck,
+
+    spine:{
+      x:(torsoTop.x + spineBase.x)/2,
+      y:(torsoTop.y + spineBase.y)/2
+    },
+
+    spineBase
+  };
+
   const BONES = [
 
-    ['torsoTop','neck'],
-    ['neck','chin'],
+    ['chin','neck'],
+
+    ['neck','spine'],
+    ['spine','spineBase'],
 
     [11,12],
 
@@ -526,9 +468,6 @@ function renderLoop(ts){
     [12,14],
     [14,16],
 
-    /* BODY */
-    [11,23],
-    [12,24],
     [23,24],
 
     [23,25],
@@ -540,21 +479,35 @@ function renderLoop(ts){
     [28,32]
   ];
 
-  const extraPoints = {
+  const FACE = latestResults.faceLandmarks;
 
-    neck,
-    torsoTop,
+  if(FACE){
 
-    spine:{
-      x:(neck.x+spineBase.x)/2,
-      y:(neck.y+spineBase.y)/2
+    const facePts = FACE.map(lm => ({
+      x:(1-lm.x)*canvas.width,
+      y:lm.y*canvas.height
+    }));
+
+    extraPoints.chin = facePts[152];
+
+    const MOUTH =
+      [61,291,13,17];
+
+    for(const i of MOUTH){
+
+      const p = facePts[i];
+
+      ctx.beginPath();
+
+      ctx.arc(p.x,p.y,2.3,0,Math.PI*2);
+
+      ctx.fill();
     }
-  };
+  }
 
   ctx.lineWidth = 2;
   ctx.strokeStyle = '#00f5ff';
   ctx.fillStyle = '#00f5ff';
-  ctx.globalAlpha = 0.9;
 
   for(const [a,b] of BONES){
 
@@ -579,150 +532,6 @@ function renderLoop(ts){
     ctx.stroke();
   }
 
-  const FACE = latestResults.faceLandmarks;
-
-  if(FACE){
-
-    const facePts = FACE.map(lm => ({
-      x:(1-lm.x)*canvas.width,
-      y:lm.y*canvas.height
-    }));
-
-    const chin = facePts[152];
-
-    neck.x = chin.x;
-    neck.y = chin.y + 12;
-
-    /* FIXED CHIN CONNECTION */
-    extraPoints.chin = {
-      x:chin.x,
-      y:chin.y
-    };
-
-    const OUTLINE = [
-      10,297,284,389,454,361,397,379,400,
-      152,176,150,172,132,234,162,54,67,10
-    ];
-
-    const LEFT_EYE = [33,133,159,145,33];
-
-    const RIGHT_EYE =
-      [362,263,386,374,362];
-
-    const NOSE =
-      [168,6,197,195,5,4];
-
-    const MOUTH =
-      [61,291,13,14,17];
-
-    ctx.lineWidth = 1.3;
-
-    for(let i=0;i<OUTLINE.length-1;i++){
-
-      const a = facePts[OUTLINE[i]];
-      const b = facePts[OUTLINE[i+1]];
-
-      ctx.beginPath();
-
-      ctx.moveTo(a.x,a.y);
-
-      ctx.lineTo(b.x,b.y);
-
-      ctx.stroke();
-    }
-
-    for(const i of LEFT_EYE){
-
-      const p = facePts[i];
-
-      ctx.beginPath();
-
-      ctx.arc(p.x,p.y,2.8,0,Math.PI*2);
-
-      ctx.fill();
-    }
-
-    for(const i of RIGHT_EYE){
-
-      const p = facePts[i];
-
-      ctx.beginPath();
-
-      ctx.arc(p.x,p.y,2.8,0,Math.PI*2);
-
-      ctx.fill();
-    }
-
-    for(let i=0;i<NOSE.length-1;i++){
-
-      const a = facePts[NOSE[i]];
-      const b = facePts[NOSE[i+1]];
-
-      ctx.beginPath();
-
-      ctx.moveTo(a.x,a.y);
-
-      ctx.lineTo(b.x,b.y);
-
-      ctx.stroke();
-    }
-
-    for(const i of MOUTH){
-
-      const p = facePts[i];
-
-      ctx.beginPath();
-
-      ctx.arc(p.x,p.y,2.3,0,Math.PI*2);
-
-      ctx.fill();
-    }
-  }
-
-  const HANDS = [
-    latestResults.leftHandLandmarks,
-    latestResults.rightHandLandmarks
-  ];
-
-  const HAND_CONN = [
-    [0,1],[1,2],[2,3],[3,4],
-    [0,5],[5,6],[6,7],[7,8],
-    [0,9],[9,10],[10,11],[11,12],
-    [0,13],[13,14],[14,15],[15,16],
-    [0,17],[17,18],[18,19],[19,20]
-  ];
-
-  for(const hand of HANDS){
-
-    if(!hand) continue;
-
-    const pts = hand.map(lm=>({
-      x:(1-lm.x)*canvas.width,
-      y:lm.y*canvas.height
-    }));
-
-    for(const [a,b] of HAND_CONN){
-
-      ctx.beginPath();
-
-      ctx.moveTo(pts[a].x,pts[a].y);
-
-      ctx.lineTo(pts[b].x,pts[b].y);
-
-      ctx.stroke();
-    }
-
-    for(const p of pts){
-
-      ctx.beginPath();
-
-      ctx.arc(p.x,p.y,2.5,0,Math.PI*2);
-
-      ctx.fill();
-    }
-  }
-
-  /* ADDED */
   if(pipCtx && pipCanvas){
 
     pipCtx.clearRect(
