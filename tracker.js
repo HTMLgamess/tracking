@@ -2,10 +2,16 @@ export let latestResults=null;
 export let holistic=null;
 export let cameraInstance=null;
 
+let processing=false;
+
 export async function initHolistic(
 video,
 canvas
 ){
+
+/*
+stop previous camera loop
+*/
 
 if(
 cameraInstance
@@ -18,6 +24,26 @@ cameraInstance.stop();
 }catch(e){}
 }
 
+
+/*
+close previous holistic instance
+*/
+
+if(
+holistic
+){
+
+try{
+
+await holistic.close();
+
+}catch(e){}
+}
+
+
+/*
+new holistic instance
+*/
 
 holistic=
 new Holistic({
@@ -50,6 +76,13 @@ latestResults=r;
 });
 
 
+processing=false;
+
+
+/*
+new camera pipeline
+*/
+
 cameraInstance=
 new Camera(
 video,
@@ -59,9 +92,16 @@ onFrame:
 async()=>{
 
 if(
+processing
+)
+return;
+
+if(
 !holistic
 )
 return;
+
+processing=true;
 
 try{
 
@@ -69,7 +109,14 @@ await holistic.send({
 image:video
 });
 
-}catch(e){}
+}catch(e){
+
+console.error(e);
+
+}finally{
+
+processing=false;
+}
 },
 
 width:
