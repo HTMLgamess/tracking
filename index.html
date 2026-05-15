@@ -6,6 +6,14 @@
 <title>SKELETON TRACKER</title>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+
+<!-- ADDED -->
+<script>
+if ('documentPictureInPicture' in window) {
+  console.log('Document Picture-in-Picture supported');
+}
+</script>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -23,6 +31,16 @@ video{display:none}
 #overlay{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#0a0a14;z-index:100;gap:20px}
 #overlay.hidden{display:none}
 button{padding:14px 40px;border:none;background:var(--cyan);cursor:pointer;font-family:'Orbitron'}
+
+/* ADDED */
+#pipBtn{
+  position:fixed;
+  bottom:20px;
+  left:140px;
+  z-index:100;
+  padding:8px 12px;
+  cursor:pointer;
+}
 </style>
 </head>
 <body>
@@ -38,6 +56,9 @@ button{padding:14px 40px;border:none;background:var(--cyan);cursor:pointer;font-
 <div id="canvas-wrapper"><canvas id="output"></canvas></div>
 
 <button id="toggleCam" style="position:fixed;bottom:20px;left:20px;z-index:100;padding:8px 12px;cursor:pointer">SHOW CAM</button>
+
+<!-- ADDED -->
+<button id="pipBtn">POP OUT</button>
 
 <div id="stats">
 FPS: <span id="fps-val">--</span><br>
@@ -70,6 +91,11 @@ let lastFpsClock = 0;
 let lastUIUpdate = 0;
 let lastInference = 0;
 let showCamera = false;
+
+/* ADDED */
+let pipWindow = null;
+let pipCanvas = null;
+let pipCtx = null;
 
 function createBackground(){
   bgCanvas = document.createElement('canvas');
@@ -139,7 +165,44 @@ async function initTracker(){
 
   document.getElementById('toggleCam').onclick = ()=>{
     showCamera = !showCamera;
-    document.getElementById('toggleCam').textContent = showCamera ? 'SHOW CAM' : 'SHOW CAM';
+    document.getElementById('toggleCam').textContent = showCamera ? 'HIDE CAM' : 'SHOW CAM';
+  };
+
+  /* ADDED */
+  document.getElementById('pipBtn').onclick = async ()=>{
+    if(!('documentPictureInPicture' in window)){
+      alert('Picture-in-Picture not supported in this browser');
+      return;
+    }
+
+    if(pipWindow){
+      pipWindow.close();
+      pipWindow = null;
+      return;
+    }
+
+    pipWindow = await documentPictureInPicture.requestWindow({
+      width: 480,
+      height: 360
+    });
+
+    pipCanvas = document.createElement('canvas');
+    pipCanvas.width = canvas.width;
+    pipCanvas.height = canvas.height;
+    pipCanvas.style.width = '100%';
+    pipCanvas.style.height = '100%';
+
+    pipCtx = pipCanvas.getContext('2d');
+
+    pipWindow.document.body.style.margin = '0';
+    pipWindow.document.body.style.background = '#0a0a14';
+    pipWindow.document.body.appendChild(pipCanvas);
+
+    pipWindow.addEventListener('pagehide', () => {
+      pipWindow = null;
+      pipCanvas = null;
+      pipCtx = null;
+    });
   };
 
   requestAnimationFrame(renderLoop);
@@ -195,9 +258,6 @@ function renderLoop(ts){
     y:lm.y*canvas.height
   }));
   
-  // =========================
-  // REPLACED TORSO / NECK SYSTEM (your version)
-  // =========================
   const torsoTop = {
     x:(JOINTS[11].x + JOINTS[12].x)/2,
     y:(JOINTS[11].y + JOINTS[12].y)/2
@@ -208,9 +268,6 @@ function renderLoop(ts){
     y:(JOINTS[23].y + JOINTS[24].y)/2
   };
 
-  // -------------------------
-  // ADDED: leg binding system
-  // -------------------------
   const hasLegs =
     (latestResults.poseLandmarks[27]?.visibility || 0) > 0.5 &&
     (latestResults.poseLandmarks[28]?.visibility || 0) > 0.5;
@@ -357,6 +414,12 @@ function renderLoop(ts){
       ctx.arc(p.x,p.y,2.5,0,Math.PI*2);
       ctx.fill();
     }
+  }
+
+  /* ADDED */
+  if(pipCtx && pipCanvas){
+    pipCtx.clearRect(0,0,pipCanvas.width,pipCanvas.height);
+    pipCtx.drawImage(canvas,0,0);
   }
 }
 </script>
