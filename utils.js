@@ -11,11 +11,11 @@ return newPt;
 return{
 
 x:
-oldPt.x*0.55+
-newPt.x*0.45,
+oldPt.x*0.62+
+newPt.x*0.38,
 
 y:
-oldPt.y*0.55+
-newPt.y*0.45
+oldPt.y*0.62+
+newPt.y*0.38
 };
 }
