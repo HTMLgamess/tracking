@@ -1,18 +1,16 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width,initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SKELETON TRACKER</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 
 <script>
-if('documentPictureInPicture' in window){
-  console.log('PiP supported');
+if ('documentPictureInPicture' in window) {
+  console.log('Document Picture-in-Picture supported');
 }
 </script>
 
@@ -20,113 +18,137 @@ if('documentPictureInPicture' in window){
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
 
 *{
-margin:0;
-padding:0;
-box-sizing:border-box;
+  box-sizing:border-box;
+  margin:0;
+  padding:0
 }
 
 :root{
---cyan:#00f5ff;
---magenta:#ff00aa;
---dim:#0a0a14;
+  --cyan:#00f5ff;
+  --magenta:#ff00aa;
+  --dim:#0a0a14
 }
 
 html,body{
-width:100%;
-height:100%;
-overflow:hidden;
-background:var(--dim);
-color:var(--cyan);
-font-family:'Share Tech Mono';
+  width:100%;
+  height:100%;
+  background:var(--dim);
+  color:var(--cyan);
+  font-family:'Share Tech Mono',monospace;
+  overflow:hidden
 }
 
 #header{
-position:fixed;
-top:0;
-left:0;
-right:0;
-z-index:50;
-display:flex;
-justify-content:space-between;
-padding:14px 28px;
-background:rgba(10,10,20,.8);
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  display:flex;
+  justify-content:space-between;
+  padding:14px 28px;
+  background:rgba(10,10,20,.8);
+  z-index:50
 }
 
 #title{
-font-family:'Orbitron';
-font-weight:900;
-letter-spacing:.3em;
+  font-family:'Orbitron',sans-serif;
+  font-weight:900;
+  letter-spacing:.3em
 }
 
 #status-row{
-display:flex;
-gap:18px;
-font-size:.7rem;
+  display:flex;
+  gap:18px;
+  font-size:.7rem
 }
 
 .status-badge{
-display:flex;
-gap:6px;
-align-items:center;
+  display:flex;
+  align-items:center;
+  gap:6px
 }
 
 .dot{
-width:7px;
-height:7px;
-border-radius:50%;
-background:#333;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#333
 }
 
 .dot.active{
-background:var(--cyan);
+  background:var(--cyan)
 }
 
 .dot.detected{
-background:var(--magenta);
+  background:var(--magenta)
 }
 
 #canvas-wrapper{
-width:100vw;
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-overflow:hidden;
+  width:100vw;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center
 }
 
 canvas{
-width:100%;
-height:100%;
-object-fit:cover;
+  width:100%;
+  height:100%;
+  object-fit:contain
 }
 
 video{
-display:none;
+  display:none
 }
 
-button{
-border:none;
-background:var(--cyan);
-font-family:'Orbitron';
-cursor:pointer;
-padding:8px 12px;
-z-index:100;
+#stats{
+  position:fixed;
+  bottom:20px;
+  right:28px;
+  font-size:.65rem;
+  z-index:50
 }
 
 #overlay{
-position:fixed;
-inset:0;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-background:#0a0a14;
-gap:20px;
-z-index:100;
+  position:fixed;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  background:#0a0a14;
+  z-index:100;
+  gap:20px
 }
 
 #overlay.hidden{
-display:none;
+  display:none
+}
+
+button{
+  padding:14px 40px;
+  border:none;
+  background:var(--cyan);
+  cursor:pointer;
+  font-family:'Orbitron'
+}
+
+#pipBtn{
+  position:fixed;
+  bottom:20px;
+  left:140px;
+  z-index:100;
+  padding:8px 12px;
+  cursor:pointer;
+}
+
+#cameraBtn{
+  position:fixed;
+  bottom:20px;
+  left:250px;
+  z-index:100;
+  padding:8px 12px;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -134,30 +156,23 @@ display:none;
 <body>
 
 <div id="header">
-
-<div id="title">
-◈ SKELETON TRACKER
-</div>
+<div id="title">◈ SKELETON TRACKER</div>
 
 <div id="status-row">
-
 <div class="status-badge">
 <div class="dot" id="dot-cam"></div>
-CAM
+<span>CAMERA</span>
 </div>
 
 <div class="status-badge">
 <div class="dot" id="dot-model"></div>
-MODEL
+<span>MODEL</span>
 </div>
 
 <div class="status-badge">
 <div class="dot" id="dot-detect"></div>
-<span id="detect-label">
-NO SIGNAL
-</span>
+<span id="detect-label">NO SIGNAL</span>
 </div>
-
 </div>
 </div>
 
@@ -166,29 +181,25 @@ NO SIGNAL
 </div>
 
 <button id="toggleCam"
-style="position:fixed;bottom:20px;left:20px">
+style="position:fixed;bottom:20px;left:20px;z-index:100;padding:8px 12px;cursor:pointer">
 SHOW CAM
 </button>
 
-<button id="cameraPicker"
-style="position:fixed;bottom:20px;left:130px">
-CAM SOURCE
-</button>
+<button id="pipBtn">POP OUT</button>
+<button id="cameraBtn">CAMERA</button>
 
-<button id="pipBtn"
-style="position:fixed;bottom:20px;left:280px">
-POP OUT
-</button>
+<div id="stats">
+FPS: <span id="fps-val">--</span><br>
+JOINTS: <span id="joint-count">0</span><br>
+HANDS: <span id="hand-count">0</span>
+</div>
 
 <div id="overlay">
 <h1>SKELETON TRACKER</h1>
-<button onclick="initTracker()">
-INITIALISE
-</button>
+<button onclick="initTracker()">INITIALISE</button>
 </div>
 
-<video
-id="video"
+<video id="video"
 playsinline
 webkit-playsinline
 autoplay
@@ -197,556 +208,449 @@ muted>
 
 <script>
 
-const video=document.getElementById('video');
-const canvas=document.getElementById('output');
-const ctx=canvas.getContext('2d');
+const video = document.getElementById('video');
+const canvas = document.getElementById('output');
+const ctx = canvas.getContext('2d');
+
+const fpsEl = document.getElementById('fps-val');
+const jointEl = document.getElementById('joint-count');
+const handEl = document.getElementById('hand-count');
+const detectEl = document.getElementById('detect-label');
+const detectDot = document.getElementById('dot-detect');
 
 let bgCanvas;
+let latestResults = null;
+let frameCount = 0;
+let lastFpsClock = 0;
+let lastUIUpdate = 0;
+let lastInference = 0;
+let showCamera = false;
 
-let latestResults=null;
-
-let showCamera=false;
-
-let pipWindow=null;
-let pipCanvas=null;
-let pipCtx=null;
-
-let outputStream=null;
-
-let deviceId=null;
+let pipWindow = null;
+let pipCanvas = null;
+let pipCtx = null;
 
 let cameraInstance;
+let currentDeviceId=null;
+let outputStream;
 
-const isMobile=
-/Android|iPhone|iPad|iPod/i
-.test(navigator.userAgent);
+let isMobile =
+  /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
 
 function createBackground(){
 
-bgCanvas=document.createElement('canvas');
+  bgCanvas = document.createElement('canvas');
 
-bgCanvas.width=canvas.width;
-bgCanvas.height=canvas.height;
+  bgCanvas.width = canvas.width;
+  bgCanvas.height = canvas.height;
 
-const bg=bgCanvas.getContext('2d');
+  const bg = bgCanvas.getContext('2d');
 
-bg.strokeStyle='rgba(0,245,255,0.04)';
+  const step = 40;
 
-for(let x=0;x<canvas.width;x+=40){
+  bg.strokeStyle = 'rgba(0,245,255,0.04)';
 
-bg.beginPath();
+  bg.beginPath();
 
-bg.moveTo(x,0);
-bg.lineTo(x,canvas.height);
+  for(let x=0;x<canvas.width;x+=step){
+    bg.moveTo(x,0);
+    bg.lineTo(x,canvas.height);
+  }
 
-bg.stroke();
+  for(let y=0;y<canvas.height;y+=step){
+    bg.moveTo(0,y);
+    bg.lineTo(canvas.width,y);
+  }
+
+  bg.stroke();
 }
 
-for(let y=0;y<canvas.height;y+=40){
-
-bg.beginPath();
-
-bg.moveTo(0,y);
-bg.lineTo(canvas.width,y);
-
-bg.stroke();
-}
-}
 
 async function startCamera(){
 
-const constraints={
+  const stream = await navigator.mediaDevices.getUserMedia({
 
-audio:false,
+    audio:false,
 
-video:{
+    video:{
+      deviceId:currentDeviceId
+        ? {exact:currentDeviceId}
+        : undefined,
 
-deviceId:
-deviceId
-? {exact:deviceId}
-: undefined,
+      facingMode:isMobile
+        ? "user"
+        : undefined
+    }
+  });
 
-width:{ideal:1280},
-height:{ideal:720},
+  video.srcObject = stream;
 
-facingMode:
-isMobile
-? 'user'
-: undefined
+  await video.play();
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  canvas.style.aspectRatio =
+    `${video.videoWidth}/${video.videoHeight}`;
+
+  createBackground();
+
+  outputStream =
+    canvas.captureStream(30);
+
+  window.skeletonStream =
+    outputStream;
+
+  document.getElementById('dot-cam')
+    .classList.add('active');
 }
-};
 
-const stream=
-await navigator
-.mediaDevices
-.getUserMedia(constraints);
-
-video.srcObject=stream;
-
-await video.play();
-
-canvas.width=
-video.videoWidth;
-
-canvas.height=
-video.videoHeight;
-
-canvas.style.aspectRatio=
-`${video.videoWidth}/${video.videoHeight}`;
-
-createBackground();
-
-outputStream=
-canvas.captureStream(30);
-
-window.skeletonStream=
-outputStream;
-
-document
-.getElementById('dot-cam')
-.classList.add('active');
-
-return stream;
-}
 
 async function initTracker(){
 
-await startCamera();
+  await startCamera();
 
-const holistic=
-new Holistic({
+  const holistic = new Holistic({
+    locateFile:f=>
+      `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`
+  });
 
-locateFile:f=>
-`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`
-});
+  holistic.setOptions({
+    modelComplexity:1,
+    smoothLandmarks:true,
+    enableSegmentation:false,
+    refineFaceLandmarks:false
+  });
 
-holistic.setOptions({
+  holistic.onResults(r=>latestResults=r);
 
-modelComplexity:1,
-smoothLandmarks:true
-});
+  cameraInstance = new Camera(video,{
 
-holistic.onResults(
-r=>latestResults=r
-);
+    onFrame:async()=>{
 
-cameraInstance=
-new Camera(video,{
+      const now = performance.now();
 
-onFrame:async()=>{
+      if(now-lastInference<33) return;
 
-await holistic.send({
-image:video
-});
-},
+      lastInference = now;
 
-width:canvas.width,
-height:canvas.height
-});
+      await holistic.send({image:video});
+    },
 
-cameraInstance.start();
+    width:canvas.width,
+    height:canvas.height
 
-document
-.getElementById('dot-model')
-.classList.add('active');
+  });
 
-document
-.getElementById('overlay')
-.classList.add('hidden');
+  cameraInstance.start();
 
-requestAnimationFrame(
-renderLoop
-);
+  document.getElementById('dot-model')
+    .classList.add('active');
+
+  document.getElementById('overlay')
+    .classList.add('hidden');
+
+  requestAnimationFrame(renderLoop);
 }
 
-document
-.getElementById('cameraPicker')
-.onclick=async()=>{
 
-const devices=
-await navigator
-.mediaDevices
-.enumerateDevices();
 
-const cams=
-devices.filter(
-d=>d.kind==='videoinput'
-);
+document.getElementById("cameraBtn").onclick=
+async()=>{
 
-const names=
-cams.map(
-(c,i)=>
-`${i}: ${c.label}`
-).join('\n');
+  const devices=
+    await navigator.mediaDevices.enumerateDevices();
 
-const pick=
-prompt(
-`Choose camera:\n${names}`
-);
+  const cams=
+    devices.filter(
+      d=>d.kind==="videoinput"
+    );
 
-if(pick===null)return;
+  const list=
+    cams.map(
+      (c,i)=>`${i}: ${c.label}`
+    ).join("\n");
 
-deviceId=
-cams[Number(pick)]
-?.deviceId;
+  const pick=
+    prompt("Choose camera:\n"+list);
 
-if(!deviceId)return;
+  if(pick===null) return;
 
-video.srcObject
-?.getTracks()
-.forEach(
-t=>t.stop()
-);
+  currentDeviceId=
+    cams[Number(pick)]?.deviceId;
 
-await startCamera();
+  video.srcObject?.getTracks()
+    .forEach(t=>t.stop());
+
+  await startCamera();
 };
 
-document
-.getElementById('toggleCam')
-.onclick=()=>{
 
-showCamera=
-!showCamera;
 
-document
-.getElementById('toggleCam')
-.textContent=
+document.getElementById('toggleCam').onclick = ()=>{
 
-showCamera
-? 'HIDE CAM'
-: 'SHOW CAM';
+  showCamera = !showCamera;
+
+  document.getElementById('toggleCam').textContent =
+    showCamera ? 'HIDE CAM' : 'SHOW CAM';
 };
 
-document
-.getElementById('pipBtn')
-.onclick=async()=>{
 
-if(!('documentPictureInPicture'
-in window)) return;
 
-if(pipWindow){
+function renderLoop(ts){
 
-pipWindow.close();
+  requestAnimationFrame(renderLoop);
 
-pipWindow=null;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-return;
-}
+  ctx.drawImage(bgCanvas,0,0);
 
-pipWindow=
-await documentPictureInPicture
-.requestWindow({
+  if(showCamera){
 
-width:480,
-height:360
-});
+    ctx.save();
 
-pipCanvas=
-document.createElement('canvas');
+    ctx.globalAlpha = 0.35;
 
-pipCanvas.width=
-canvas.width;
+    ctx.scale(-1,1);
 
-pipCanvas.height=
-canvas.height;
+    ctx.drawImage(
+      video,
+      -canvas.width,
+      0,
+      canvas.width,
+      canvas.height
+    );
 
-pipCtx=
-pipCanvas.getContext('2d');
+    ctx.restore();
+  }
 
-pipWindow.document.body
-.style.margin='0';
+  if(!latestResults) return;
 
-pipWindow.document.body
-.appendChild(
-pipCanvas
-);
-};
+  const pose = latestResults.poseLandmarks;
 
-function renderLoop(){
+  if(!pose) return;
 
-requestAnimationFrame(
-renderLoop
-);
 
-ctx.clearRect(
-0,0,
-canvas.width,
-canvas.height
-);
+  const JOINTS = pose.map(lm => ({
+    x:(1-lm.x)*canvas.width,
+    y:lm.y*canvas.height
+  }));
 
-ctx.drawImage(
-bgCanvas,
-0,0
-);
 
-if(showCamera){
+  const shoulders={
+    x:(JOINTS[11].x+JOINTS[12].x)/2,
+    y:(JOINTS[11].y+JOINTS[12].y)/2
+  };
 
-ctx.save();
+  const hips={
+    x:(JOINTS[23].x+JOINTS[24].x)/2,
+    y:(JOINTS[23].y+JOINTS[24].y)/2
+  };
 
-ctx.globalAlpha=.35;
+  const neck={
+    x:shoulders.x,
+    y:shoulders.y-40
+  };
 
-ctx.scale(-1,1);
 
-ctx.drawImage(
-video,
--canvas.width,
-0,
-canvas.width,
-canvas.height
-);
+  const extra={
+    neck,
+    spine:{
+      x:(neck.x+hips.x)/2,
+      y:(neck.y+hips.y)/2
+    },
+    hips
+  };
 
-ctx.restore();
-}
 
-if(!latestResults) return;
+  const BONES=[
 
-const pose=
-latestResults.poseLandmarks;
+    ['chin','neck'],
+    ['neck','spine'],
+    ['spine','hips'],
 
-if(!pose) return;
+    [11,12],
+    [23,24],
 
-const JOINTS=
-pose.map(
-lm=>({
+    [11,13],[13,15],
+    [12,14],[14,16],
 
-x:(1-lm.x)
-*canvas.width,
+    [23,25],[25,27],[27,31],
+    [24,26],[26,28],[28,32]
+  ];
 
-y:lm.y
-*canvas.height
-})
-);
 
-const shoulder={
+  ctx.lineWidth=2;
+  ctx.strokeStyle='#00f5ff';
+  ctx.fillStyle='#00f5ff';
 
-x:(JOINTS[11].x+
-JOINTS[12].x)/2,
 
-y:(JOINTS[11].y+
-JOINTS[12].y)/2
-};
+  const FACE=latestResults.faceLandmarks;
 
-const hips={
+  if(FACE){
 
-x:(JOINTS[23].x+
-JOINTS[24].x)/2,
+    const facePts = FACE.map(lm => ({
+      x:(1-lm.x)*canvas.width,
+      y:lm.y*canvas.height
+    }));
 
-y:(JOINTS[23].y+
-JOINTS[24].y)/2
-};
+    extra.chin = facePts[152];
 
-const neck={
 
-x:shoulder.x,
-y:shoulder.y-40
-};
+    const OUTLINE = [
+      10,297,284,389,454,361,397,379,400,
+      152,176,150,172,132,234,162,54,67,10
+    ];
 
-const extra={
+    const LEFT_EYE=[33,133,159,145,33];
+    const RIGHT_EYE=[362,263,386,374,362];
+    const NOSE=[168,6,197,195,5,4];
+    const MOUTH = [61,291,13,17];
 
-neck,
 
-spine:{
+    for(let i=0;i<OUTLINE.length-1;i++){
 
-x:(neck.x+
-hips.x)/2,
+      ctx.beginPath();
 
-y:(neck.y+
-hips.y)/2
-},
+      ctx.moveTo(
+        facePts[OUTLINE[i]].x,
+        facePts[OUTLINE[i]].y
+      );
 
-hips
-};
+      ctx.lineTo(
+        facePts[OUTLINE[i+1]].x,
+        facePts[OUTLINE[i+1]].y
+      );
 
-const BONES=[
+      ctx.stroke();
+    }
 
-['chin','neck'],
 
-['neck','spine'],
-['spine','hips'],
+    for(let i=0;i<NOSE.length-1;i++){
 
-[11,12],
-[23,24],
+      ctx.beginPath();
 
-[11,13],[13,15],
-[12,14],[14,16],
+      ctx.moveTo(
+        facePts[NOSE[i]].x,
+        facePts[NOSE[i]].y
+      );
 
-[11,23],
-[12,24],
+      ctx.lineTo(
+        facePts[NOSE[i+1]].x,
+        facePts[NOSE[i+1]].y
+      );
 
-[23,25],[25,27],[27,31],
-[24,26],[26,28],[28,32]
-];
+      ctx.stroke();
+    }
 
-const FACE=
-latestResults.faceLandmarks;
 
-if(FACE){
+    for(const i of
+      [...LEFT_EYE,
+       ...RIGHT_EYE,
+       ...MOUTH]){
 
-const pts=
-FACE.map(
-lm=>({
+      ctx.beginPath();
 
-x:(1-lm.x)
-*canvas.width,
+      ctx.arc(
+        facePts[i].x,
+        facePts[i].y,
+        2.5,
+        0,
+        Math.PI*2
+      );
 
-y:lm.y
-*canvas.height
-})
-);
+      ctx.fill();
+    }
+  }
 
-extra.chin=
-pts[152];
 
-const LEFT_EYE=
-[33,133,159,145,33];
 
-const RIGHT_EYE=
-[362,263,386,374,362];
+  for(const [a,b] of BONES){
 
-const MOUTH=
-[61,291,13,17];
+    const p1=
+      typeof a==="number"
+      ? JOINTS[a]
+      : extra[a];
 
-for(const i of
-[...LEFT_EYE,
-...RIGHT_EYE,
-...MOUTH]){
+    const p2=
+      typeof b==="number"
+      ? JOINTS[b]
+      : extra[b];
 
-ctx.beginPath();
+    if(!p1||!p2) continue;
 
-ctx.arc(
-pts[i].x,
-pts[i].y,
-2.5,
-0,
-Math.PI*2
-);
+    ctx.beginPath();
 
-ctx.fill();
-}
-}
+    ctx.moveTo(p1.x,p1.y);
 
-ctx.strokeStyle=
-'#00f5ff';
+    ctx.lineTo(p2.x,p2.y);
 
-ctx.fillStyle=
-'#00f5ff';
+    ctx.stroke();
+  }
 
-for(const [a,b]
-of BONES){
 
-const p1=
-typeof a==='number'
-? JOINTS[a]
-: extra[a];
 
-const p2=
-typeof b==='number'
-? JOINTS[b]
-: extra[b];
+  const HANDS = [
+    latestResults.leftHandLandmarks,
+    latestResults.rightHandLandmarks
+  ];
 
-if(!p1||!p2)
-continue;
 
-ctx.beginPath();
+  const HAND_CONN = [
+    [0,1],[1,2],[2,3],[3,4],
+    [0,5],[5,6],[6,7],[7,8],
+    [0,9],[9,10],[10,11],[11,12],
+    [0,13],[13,14],[14,15],[15,16],
+    [0,17],[17,18],[18,19],[19,20]
+  ];
 
-ctx.moveTo(
-p1.x,p1.y
-);
 
-ctx.lineTo(
-p2.x,p2.y
-);
+  for(const hand of HANDS){
 
-ctx.stroke();
-}
+    if(!hand) continue;
 
-const HANDS=[
+    const pts = hand.map(lm=>({
+      x:(1-lm.x)*canvas.width,
+      y:lm.y*canvas.height
+    }));
 
-latestResults
-.leftHandLandmarks,
 
-latestResults
-.rightHandLandmarks
-];
+    for(const [a,b] of HAND_CONN){
 
-const HAND_CONN=[
+      ctx.beginPath();
 
-[0,1],[1,2],[2,3],[3,4],
+      ctx.moveTo(pts[a].x,pts[a].y);
 
-[0,5],[5,6],[6,7],[7,8],
+      ctx.lineTo(pts[b].x,pts[b].y);
 
-[0,9],[9,10],[10,11],[11,12],
+      ctx.stroke();
+    }
 
-[0,13],[13,14],[14,15],[15,16],
 
-[0,17],[17,18],[18,19],[19,20]
-];
+    for(const p of pts){
 
-for(const hand
-of HANDS){
+      ctx.beginPath();
 
-if(!hand)
-continue;
+      ctx.arc(p.x,p.y,2.5,0,Math.PI*2);
 
-const pts=
-hand.map(
-lm=>({
+      ctx.fill();
+    }
+  }
 
-x:(1-lm.x)
-*canvas.width,
 
-y:lm.y
-*canvas.height
-})
-);
 
-for(const [a,b]
-of HAND_CONN){
+  if(pipCtx && pipCanvas){
 
-ctx.beginPath();
+    pipCtx.clearRect(
+      0,
+      0,
+      pipCanvas.width,
+      pipCanvas.height
+    );
 
-ctx.moveTo(
-pts[a].x,
-pts[a].y
-);
-
-ctx.lineTo(
-pts[b].x,
-pts[b].y
-);
-
-ctx.stroke();
-}
-
-for(const p of pts){
-
-ctx.beginPath();
-
-ctx.arc(
-p.x,
-p.y,
-2.2,
-0,
-Math.PI*2
-);
-
-ctx.fill();
-}
-}
-
-if(pipCtx){
-
-pipCtx.clearRect(
-0,0,
-pipCanvas.width,
-pipCanvas.height
-);
-
-pipCtx.drawImage(
-canvas,
-0,0
-);
-}
+    pipCtx.drawImage(canvas,0,0);
+  }
 }
 
 </script>
