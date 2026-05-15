@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SKELETON TRACKER</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 
-<!-- ADDED -->
 <script>
 if ('documentPictureInPicture' in window) {
   console.log('Document Picture-in-Picture supported');
@@ -16,23 +16,123 @@ if ('documentPictureInPicture' in window) {
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--cyan:#00f5ff;--magenta:#ff00aa;--dim:#0a0a14}
-html,body{width:100%;height:100%;background:var(--dim);color:var(--cyan);font-family:'Share Tech Mono',monospace;overflow:hidden}
-#header{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:14px 28px;background:rgba(10,10,20,.8);z-index:50}
-#title{font-family:'Orbitron',sans-serif;font-weight:900;letter-spacing:.3em}
-#status-row{display:flex;gap:18px;font-size:.7rem}
-.status-badge{display:flex;align-items:center;gap:6px}
-.dot{width:7px;height:7px;border-radius:50%;background:#333}.dot.active{background:var(--cyan)}.dot.detected{background:var(--magenta)}
-#canvas-wrapper{width:100vw;height:100vh;display:flex;justify-content:center;align-items:center}
-canvas{width:100%;height:100%;object-fit:contain}
-video{display:none}
-#stats{position:fixed;bottom:20px;right:28px;font-size:.65rem;z-index:50}
-#overlay{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#0a0a14;z-index:100;gap:20px}
-#overlay.hidden{display:none}
-button{padding:14px 40px;border:none;background:var(--cyan);cursor:pointer;font-family:'Orbitron'}
 
-/* ADDED */
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0
+}
+
+:root{
+  --cyan:#00f5ff;
+  --magenta:#ff00aa;
+  --dim:#0a0a14
+}
+
+html,body{
+  width:100%;
+  height:100%;
+  background:var(--dim);
+  color:var(--cyan);
+  font-family:'Share Tech Mono',monospace;
+  overflow:hidden
+}
+
+#header{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  display:flex;
+  justify-content:space-between;
+  padding:14px 28px;
+  background:rgba(10,10,20,.8);
+  z-index:50
+}
+
+#title{
+  font-family:'Orbitron',sans-serif;
+  font-weight:900;
+  letter-spacing:.3em
+}
+
+#status-row{
+  display:flex;
+  gap:18px;
+  font-size:.7rem
+}
+
+.status-badge{
+  display:flex;
+  align-items:center;
+  gap:6px
+}
+
+.dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#333
+}
+
+.dot.active{
+  background:var(--cyan)
+}
+
+.dot.detected{
+  background:var(--magenta)
+}
+
+#canvas-wrapper{
+  width:100vw;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center
+}
+
+canvas{
+  width:100%;
+  height:100%;
+  object-fit:contain
+}
+
+video{
+  display:none
+}
+
+#stats{
+  position:fixed;
+  bottom:20px;
+  right:28px;
+  font-size:.65rem;
+  z-index:50
+}
+
+#overlay{
+  position:fixed;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  background:#0a0a14;
+  z-index:100;
+  gap:20px
+}
+
+#overlay.hidden{
+  display:none
+}
+
+button{
+  padding:14px 40px;
+  border:none;
+  background:var(--cyan);
+  cursor:pointer;
+  font-family:'Orbitron'
+}
+
 #pipBtn{
   position:fixed;
   bottom:20px;
@@ -41,24 +141,59 @@ button{padding:14px 40px;border:none;background:var(--cyan);cursor:pointer;font-
   padding:8px 12px;
   cursor:pointer;
 }
+
+#virtualCamBtn{
+  position:fixed;
+  bottom:20px;
+  left:260px;
+  z-index:100;
+  padding:8px 12px;
+  cursor:pointer;
+}
 </style>
 </head>
+
 <body>
+
 <div id="header">
 <div id="title">◈ SKELETON TRACKER</div>
+
 <div id="status-row">
-<div class="status-badge"><div class="dot" id="dot-cam"></div><span>CAMERA</span></div>
-<div class="status-badge"><div class="dot" id="dot-model"></div><span>MODEL</span></div>
-<div class="status-badge"><div class="dot" id="dot-detect"></div><span id="detect-label">NO SIGNAL</span></div>
+<div class="status-badge">
+<div class="dot" id="dot-cam"></div>
+<span>CAMERA</span>
+</div>
+
+<div class="status-badge">
+<div class="dot" id="dot-model"></div>
+<span>MODEL</span>
+</div>
+
+<div class="status-badge">
+<div class="dot" id="dot-detect"></div>
+<span id="detect-label">NO SIGNAL</span>
 </div>
 </div>
+</div>
 
-<div id="canvas-wrapper"><canvas id="output"></canvas></div>
+<div id="canvas-wrapper">
+<canvas id="output"></canvas>
+</div>
 
-<button id="toggleCam" style="position:fixed;bottom:20px;left:20px;z-index:100;padding:8px 12px;cursor:pointer">SHOW CAM</button>
+<button id="toggleCam"
+style="
+position:fixed;
+bottom:20px;
+left:20px;
+z-index:100;
+padding:8px 12px;
+cursor:pointer">
+SHOW CAM
+</button>
 
-<!-- ADDED -->
 <button id="pipBtn">POP OUT</button>
+
+<button id="virtualCamBtn">ENABLE WEBCAM OUTPUT</button>
 
 <div id="stats">
 FPS: <span id="fps-val">--</span><br>
@@ -74,6 +209,7 @@ HANDS: <span id="hand-count">0</span>
 <video id="video" playsinline autoplay muted></video>
 
 <script>
+
 const video = document.getElementById('video');
 const canvas = document.getElementById('output');
 const ctx = canvas.getContext('2d');
@@ -92,12 +228,16 @@ let lastUIUpdate = 0;
 let lastInference = 0;
 let showCamera = false;
 
-/* ADDED */
 let pipWindow = null;
 let pipCanvas = null;
 let pipCtx = null;
 
+/* VIRTUAL WEBCAM */
+let virtualStream = null;
+let virtualPreview = null;
+
 function createBackground(){
+
   bgCanvas = document.createElement('canvas');
   bgCanvas.width = canvas.width;
   bgCanvas.height = canvas.height;
@@ -122,8 +262,13 @@ function createBackground(){
 }
 
 async function initTracker(){
+
   const stream = await navigator.mediaDevices.getUserMedia({
-    video:{width:{ideal:960},height:{ideal:540},facingMode:'user'}
+    video:{
+      width:{ideal:960},
+      height:{ideal:540},
+      facingMode:'user'
+    }
   });
 
   video.srcObject = stream;
@@ -152,12 +297,17 @@ async function initTracker(){
   new Camera(video,{
     onFrame:async()=>{
       const now = performance.now();
+
       if(now-lastInference<33) return;
+
       lastInference = now;
+
       await holistic.send({image:video});
     },
+
     width:canvas.width,
     height:canvas.height
+
   }).start();
 
   document.getElementById('dot-model').classList.add('active');
@@ -165,13 +315,15 @@ async function initTracker(){
 
   document.getElementById('toggleCam').onclick = ()=>{
     showCamera = !showCamera;
-    document.getElementById('toggleCam').textContent = showCamera ? 'HIDE CAM' : 'SHOW CAM';
+    document.getElementById('toggleCam').textContent =
+      showCamera ? 'HIDE CAM' : 'SHOW CAM';
   };
 
-  /* ADDED */
+  /* POP OUT */
   document.getElementById('pipBtn').onclick = async ()=>{
+
     if(!('documentPictureInPicture' in window)){
-      alert('Picture-in-Picture not supported in this browser');
+      alert('Picture-in-Picture not supported');
       return;
     }
 
@@ -182,13 +334,15 @@ async function initTracker(){
     }
 
     pipWindow = await documentPictureInPicture.requestWindow({
-      width: 480,
-      height: 360
+      width:480,
+      height:360
     });
 
     pipCanvas = document.createElement('canvas');
+
     pipCanvas.width = canvas.width;
     pipCanvas.height = canvas.height;
+
     pipCanvas.style.width = '100%';
     pipCanvas.style.height = '100%';
 
@@ -196,19 +350,63 @@ async function initTracker(){
 
     pipWindow.document.body.style.margin = '0';
     pipWindow.document.body.style.background = '#0a0a14';
+
     pipWindow.document.body.appendChild(pipCanvas);
 
-    pipWindow.addEventListener('pagehide', () => {
+    pipWindow.addEventListener('pagehide', ()=>{
       pipWindow = null;
       pipCanvas = null;
       pipCtx = null;
     });
   };
 
+  /* VIRTUAL CAMERA OUTPUT */
+  document.getElementById('virtualCamBtn').onclick = async ()=>{
+
+    if(virtualStream) return;
+
+    virtualStream = canvas.captureStream(60);
+
+    window.virtualSkeletonCamera = virtualStream;
+
+    document.getElementById('virtualCamBtn').textContent =
+      'WEBCAM ACTIVE';
+
+    virtualPreview = document.createElement('video');
+
+    virtualPreview.srcObject = virtualStream;
+    virtualPreview.autoplay = true;
+    virtualPreview.muted = true;
+    virtualPreview.playsInline = true;
+
+    virtualPreview.style.position = 'fixed';
+    virtualPreview.style.top = '20px';
+    virtualPreview.style.right = '20px';
+    virtualPreview.style.width = '220px';
+    virtualPreview.style.border = '2px solid #00f5ff';
+    virtualPreview.style.zIndex = '999';
+
+    document.body.appendChild(virtualPreview);
+
+    alert(
+`Virtual webcam stream active.
+
+USE WITH OBS:
+
+1. Open OBS Studio
+2. Add Browser Source
+3. Load this webpage
+4. Start OBS Virtual Camera
+5. Select "OBS Virtual Camera"
+   in Discord / Zoom / etc`
+    );
+  };
+
   requestAnimationFrame(renderLoop);
 }
 
 function renderLoop(ts){
+
   requestAnimationFrame(renderLoop);
 
   frameCount++;
@@ -216,19 +414,35 @@ function renderLoop(ts){
   let fps = 0;
 
   if(ts-lastFpsClock>1000){
-    fps = Math.round(frameCount*1000/(ts-lastFpsClock));
+
+    fps = Math.round(
+      frameCount*1000/(ts-lastFpsClock)
+    );
+
     frameCount = 0;
     lastFpsClock = ts;
   }
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
+
   ctx.drawImage(bgCanvas,0,0);
 
   if(showCamera){
+
     ctx.save();
+
     ctx.globalAlpha = 0.35;
+
     ctx.scale(-1,1);
-    ctx.drawImage(video,-canvas.width,0,canvas.width,canvas.height);
+
+    ctx.drawImage(
+      video,
+      -canvas.width,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
     ctx.restore();
   }
 
@@ -241,14 +455,21 @@ function renderLoop(ts){
   const detected = !!(pose && pose.length);
 
   if(ts-lastUIUpdate>100){
+
     lastUIUpdate = ts;
 
     fpsEl.textContent = fps || fpsEl.textContent;
-    jointEl.textContent = pose ? pose.length : 0;
-    handEl.textContent = (leftHand?1:0)+(rightHand?1:0);
 
-    detectDot.className = 'dot'+(detected?' detected':'');
-    detectEl.textContent = detected ? 'TRACKING':'SCANNING';
+    jointEl.textContent = pose ? pose.length : 0;
+
+    handEl.textContent =
+      (leftHand?1:0)+(rightHand?1:0);
+
+    detectDot.className =
+      'dot'+(detected?' detected':'');
+
+    detectEl.textContent =
+      detected ? 'TRACKING':'SCANNING';
   }
 
   if(!pose || pose.length < 25) return;
@@ -257,7 +478,7 @@ function renderLoop(ts){
     x:(1-lm.x)*canvas.width,
     y:lm.y*canvas.height
   }));
-  
+
   const torsoTop = {
     x:(JOINTS[11].x + JOINTS[12].x)/2,
     y:(JOINTS[11].y + JOINTS[12].y)/2
@@ -273,11 +494,17 @@ function renderLoop(ts){
     (latestResults.poseLandmarks[28]?.visibility || 0) > 0.5;
 
   if(hasLegs){
+
     const leftAnkle = JOINTS[27];
     const rightAnkle = JOINTS[28];
 
-    spineBase.x = (JOINTS[23].x + JOINTS[24].x + leftAnkle.x + rightAnkle.x) / 4;
-    spineBase.y = (JOINTS[23].y + JOINTS[24].y + leftAnkle.y + rightAnkle.y) / 4;
+    spineBase.x =
+      (JOINTS[23].x + JOINTS[24].x +
+       leftAnkle.x + rightAnkle.x) / 4;
+
+    spineBase.y =
+      (JOINTS[23].y + JOINTS[24].y +
+       leftAnkle.y + rightAnkle.y) / 4;
   }
 
   const neck = {
@@ -286,18 +513,32 @@ function renderLoop(ts){
   };
 
   const BONES = [
+
     ['torsoTop','neck'],
     ['neck','chin'],
 
-    [11,12],[11,13],[13,15],
-    [12,14],[14,16],
-    [23,25],[25,27],[27,31],
-    [24,26],[26,28],[28,32]
+    [11,12],
+    [11,13],
+    [13,15],
+
+    [12,14],
+    [14,16],
+
+    [23,25],
+    [25,27],
+    [27,31],
+
+    [24,26],
+    [26,28],
+    [28,32]
   ];
 
   const extraPoints = {
+
     neck,
+
     torsoTop,
+
     spine:{
       x:(neck.x+spineBase.x)/2,
       y:(neck.y+spineBase.y)/2
@@ -310,8 +551,17 @@ function renderLoop(ts){
   ctx.globalAlpha = 0.9;
 
   for(const [a,b] of BONES){
-    const p1 = typeof a === 'number' ? JOINTS[a] : extraPoints[a];
-    const p2 = typeof b === 'number' ? JOINTS[b] : extraPoints[b];
+
+    const p1 =
+      typeof a === 'number'
+      ? JOINTS[a]
+      : extraPoints[a];
+
+    const p2 =
+      typeof b === 'number'
+      ? JOINTS[b]
+      : extraPoints[b];
+
     if(!p1 || !p2) continue;
 
     ctx.beginPath();
@@ -320,71 +570,10 @@ function renderLoop(ts){
     ctx.stroke();
   }
 
-  const FACE = latestResults.faceLandmarks;
-
-  if(FACE){
-    const facePts = FACE.map(lm => ({
-      x:(1-lm.x)*canvas.width,
-      y:lm.y*canvas.height
-    }));
-
-    const chin = facePts[152];
-    neck.x = chin.x;
-    neck.y = chin.y + 12;
-
-    const OUTLINE = [
-      10,297,284,389,454,361,397,379,400,
-      152,176,150,172,132,234,162,54,67,10
-    ];
-
-    const LEFT_EYE = [33,133,159,145,33];
-    const RIGHT_EYE = [362,263,386,374,362];
-    const NOSE = [168,6,197,195,5,4];
-    const MOUTH = [61,291,13,14,17];
-
-    ctx.lineWidth = 1.3;
-
-    for(let i=0;i<OUTLINE.length-1;i++){
-      const a = facePts[OUTLINE[i]];
-      const b = facePts[OUTLINE[i+1]];
-      ctx.beginPath();
-      ctx.moveTo(a.x,a.y);
-      ctx.lineTo(b.x,b.y);
-      ctx.stroke();
-    }
-
-    for(const i of LEFT_EYE){
-      const p = facePts[i];
-      ctx.beginPath();
-      ctx.arc(p.x,p.y,2.8,0,Math.PI*2);
-      ctx.fill();
-    }
-
-    for(const i of RIGHT_EYE){
-      const p = facePts[i];
-      ctx.beginPath();
-      ctx.arc(p.x,p.y,2.8,0,Math.PI*2);
-      ctx.fill();
-    }
-
-    for(let i=0;i<NOSE.length-1;i++){
-      const a = facePts[NOSE[i]];
-      const b = facePts[NOSE[i+1]];
-      ctx.beginPath();
-      ctx.moveTo(a.x,a.y);
-      ctx.lineTo(b.x,b.y);
-      ctx.stroke();
-    }
-
-    for(const i of MOUTH){
-      const p = facePts[i];
-      ctx.beginPath();
-      ctx.arc(p.x,p.y,2.3,0,Math.PI*2);
-      ctx.fill();
-    }
-  }
-
-  const HANDS = [latestResults.leftHandLandmarks, latestResults.rightHandLandmarks];
+  const HANDS = [
+    latestResults.leftHandLandmarks,
+    latestResults.rightHandLandmarks
+  ];
 
   const HAND_CONN = [
     [0,1],[1,2],[2,3],[3,4],
@@ -395,6 +584,7 @@ function renderLoop(ts){
   ];
 
   for(const hand of HANDS){
+
     if(!hand) continue;
 
     const pts = hand.map(lm=>({
@@ -403,23 +593,53 @@ function renderLoop(ts){
     }));
 
     for(const [a,b] of HAND_CONN){
+
       ctx.beginPath();
-      ctx.moveTo(pts[a].x,pts[a].y);
-      ctx.lineTo(pts[b].x,pts[b].y);
+
+      ctx.moveTo(
+        pts[a].x,
+        pts[a].y
+      );
+
+      ctx.lineTo(
+        pts[b].x,
+        pts[b].y
+      );
+
       ctx.stroke();
     }
 
     for(const p of pts){
+
       ctx.beginPath();
-      ctx.arc(p.x,p.y,2.5,0,Math.PI*2);
+
+      ctx.arc(
+        p.x,
+        p.y,
+        2.5,
+        0,
+        Math.PI*2
+      );
+
       ctx.fill();
     }
   }
 
-  /* ADDED */
+  /* UPDATE POP OUT WINDOW */
   if(pipCtx && pipCanvas){
-    pipCtx.clearRect(0,0,pipCanvas.width,pipCanvas.height);
-    pipCtx.drawImage(canvas,0,0);
+
+    pipCtx.clearRect(
+      0,
+      0,
+      pipCanvas.width,
+      pipCanvas.height
+    );
+
+    pipCtx.drawImage(
+      canvas,
+      0,
+      0
+    );
   }
 }
 </script>
