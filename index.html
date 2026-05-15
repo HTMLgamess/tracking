@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skeleton Tracker</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js"></script>
+</head>
+<body>
+
+<div id="header">
+<div id="title">SKELETON TRACKER</div>
+
+<div id="status-row">
+<div class="status-badge">
+<div class="dot" id="dot-cam"></div>
+CAMERA
+</div>
+
+<div class="status-badge">
+<div class="dot" id="dot-model"></div>
+MODEL
+</div>
+</div>
+</div>
+
+<canvas id="output"></canvas>
+
+<button id="toggleCam">SHOW CAM</button>
+<button id="cameraBtn">CAMERA</button>
+
+<video id="video" autoplay playsinline muted></video>
+
+<script type="module" src="app.js"></script>
+
+</body>
+</html>
