@@ -2,15 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+content="width=device-width,initial-scale=1.0">
+
 <title>SKELETON TRACKER</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
 <script>
-if ('documentPictureInPicture' in window) {
-  console.log('Document Picture-in-Picture supported');
+if('documentPictureInPicture' in window){
+  console.log('PiP supported');
 }
 </script>
 
@@ -18,130 +20,113 @@ if ('documentPictureInPicture' in window) {
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
 
 *{
-  box-sizing:border-box;
-  margin:0;
-  padding:0
+margin:0;
+padding:0;
+box-sizing:border-box;
 }
 
 :root{
-  --cyan:#00f5ff;
-  --magenta:#ff00aa;
-  --dim:#0a0a14
+--cyan:#00f5ff;
+--magenta:#ff00aa;
+--dim:#0a0a14;
 }
 
 html,body{
-  width:100%;
-  height:100%;
-  background:var(--dim);
-  color:var(--cyan);
-  font-family:'Share Tech Mono',monospace;
-  overflow:hidden
+width:100%;
+height:100%;
+overflow:hidden;
+background:var(--dim);
+color:var(--cyan);
+font-family:'Share Tech Mono';
 }
 
 #header{
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  display:flex;
-  justify-content:space-between;
-  padding:14px 28px;
-  background:rgba(10,10,20,.8);
-  z-index:50
+position:fixed;
+top:0;
+left:0;
+right:0;
+z-index:50;
+display:flex;
+justify-content:space-between;
+padding:14px 28px;
+background:rgba(10,10,20,.8);
 }
 
 #title{
-  font-family:'Orbitron',sans-serif;
-  font-weight:900;
-  letter-spacing:.3em
+font-family:'Orbitron';
+font-weight:900;
+letter-spacing:.3em;
 }
 
 #status-row{
-  display:flex;
-  gap:18px;
-  font-size:.7rem
+display:flex;
+gap:18px;
+font-size:.7rem;
 }
 
 .status-badge{
-  display:flex;
-  align-items:center;
-  gap:6px
+display:flex;
+gap:6px;
+align-items:center;
 }
 
 .dot{
-  width:7px;
-  height:7px;
-  border-radius:50%;
-  background:#333
+width:7px;
+height:7px;
+border-radius:50%;
+background:#333;
 }
 
 .dot.active{
-  background:var(--cyan)
+background:var(--cyan);
 }
 
 .dot.detected{
-  background:var(--magenta)
+background:var(--magenta);
 }
 
 #canvas-wrapper{
-  width:100vw;
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center
+width:100vw;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+overflow:hidden;
 }
 
 canvas{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  max-width:100vw;
-  max-height:100vh;
+width:100%;
+height:100%;
+object-fit:cover;
 }
 
 video{
-  display:none
-}
-
-#stats{
-  position:fixed;
-  bottom:20px;
-  right:28px;
-  font-size:.65rem;
-  z-index:50
-}
-
-#overlay{
-  position:fixed;
-  inset:0;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  background:#0a0a14;
-  z-index:100;
-  gap:20px
-}
-
-#overlay.hidden{
-  display:none
+display:none;
 }
 
 button{
-  padding:14px 40px;
-  border:none;
-  background:var(--cyan);
-  cursor:pointer;
-  font-family:'Orbitron'
+border:none;
+background:var(--cyan);
+font-family:'Orbitron';
+cursor:pointer;
+padding:8px 12px;
+z-index:100;
 }
 
-#pipBtn{
-  position:fixed;
-  bottom:20px;
-  left:140px;
-  z-index:100;
-  padding:8px 12px;
-  cursor:pointer;
+#overlay{
+position:fixed;
+inset:0;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+background:#0a0a14;
+gap:20px;
+z-index:100;
+}
+
+#overlay.hidden{
+display:none;
 }
 </style>
 </head>
@@ -149,23 +134,30 @@ button{
 <body>
 
 <div id="header">
-<div id="title">◈ SKELETON TRACKER</div>
+
+<div id="title">
+◈ SKELETON TRACKER
+</div>
 
 <div id="status-row">
+
 <div class="status-badge">
 <div class="dot" id="dot-cam"></div>
-<span>CAMERA</span>
+CAM
 </div>
 
 <div class="status-badge">
 <div class="dot" id="dot-model"></div>
-<span>MODEL</span>
+MODEL
 </div>
 
 <div class="status-badge">
 <div class="dot" id="dot-detect"></div>
-<span id="detect-label">NO SIGNAL</span>
+<span id="detect-label">
+NO SIGNAL
+</span>
 </div>
+
 </div>
 </div>
 
@@ -174,24 +166,29 @@ button{
 </div>
 
 <button id="toggleCam"
-style="position:fixed;bottom:20px;left:20px;z-index:100;padding:8px 12px;cursor:pointer">
+style="position:fixed;bottom:20px;left:20px">
 SHOW CAM
 </button>
 
-<button id="pipBtn">POP OUT</button>
+<button id="cameraPicker"
+style="position:fixed;bottom:20px;left:130px">
+CAM SOURCE
+</button>
 
-<div id="stats">
-FPS: <span id="fps-val">--</span><br>
-JOINTS: <span id="joint-count">0</span><br>
-HANDS: <span id="hand-count">0</span>
-</div>
+<button id="pipBtn"
+style="position:fixed;bottom:20px;left:280px">
+POP OUT
+</button>
 
 <div id="overlay">
 <h1>SKELETON TRACKER</h1>
-<button onclick="initTracker()">INITIALISE</button>
+<button onclick="initTracker()">
+INITIALISE
+</button>
 </div>
 
-<video id="video"
+<video
+id="video"
 playsinline
 webkit-playsinline
 autoplay
@@ -200,349 +197,556 @@ muted>
 
 <script>
 
-const video = document.getElementById('video');
-const canvas = document.getElementById('output');
-const ctx = canvas.getContext('2d');
-
-const fpsEl = document.getElementById('fps-val');
-const jointEl = document.getElementById('joint-count');
-const handEl = document.getElementById('hand-count');
-const detectEl = document.getElementById('detect-label');
-const detectDot = document.getElementById('dot-detect');
+const video=document.getElementById('video');
+const canvas=document.getElementById('output');
+const ctx=canvas.getContext('2d');
 
 let bgCanvas;
-let latestResults = null;
-let frameCount = 0;
-let lastFpsClock = 0;
-let lastUIUpdate = 0;
-let lastInference = 0;
-let showCamera = false;
 
-let pipWindow = null;
-let pipCanvas = null;
-let pipCtx = null;
+let latestResults=null;
 
-let outputStream = null;
+let showCamera=false;
 
-let isMobile =
-  /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+let pipWindow=null;
+let pipCanvas=null;
+let pipCtx=null;
+
+let outputStream=null;
+
+let deviceId=null;
+
+let cameraInstance;
+
+const isMobile=
+/Android|iPhone|iPad|iPod/i
+.test(navigator.userAgent);
 
 function createBackground(){
 
-  bgCanvas = document.createElement('canvas');
+bgCanvas=document.createElement('canvas');
 
-  bgCanvas.width = canvas.width;
-  bgCanvas.height = canvas.height;
+bgCanvas.width=canvas.width;
+bgCanvas.height=canvas.height;
 
-  const bg = bgCanvas.getContext('2d');
+const bg=bgCanvas.getContext('2d');
 
-  const step = 40;
+bg.strokeStyle='rgba(0,245,255,0.04)';
 
-  bg.strokeStyle = 'rgba(0,245,255,0.04)';
+for(let x=0;x<canvas.width;x+=40){
 
-  bg.beginPath();
+bg.beginPath();
 
-  for(let x=0;x<canvas.width;x+=step){
-    bg.moveTo(x,0);
-    bg.lineTo(x,canvas.height);
-  }
+bg.moveTo(x,0);
+bg.lineTo(x,canvas.height);
 
-  for(let y=0;y<canvas.height;y+=step){
-    bg.moveTo(0,y);
-    bg.lineTo(canvas.width,y);
-  }
+bg.stroke();
+}
 
-  bg.stroke();
+for(let y=0;y<canvas.height;y+=40){
+
+bg.beginPath();
+
+bg.moveTo(0,y);
+bg.lineTo(canvas.width,y);
+
+bg.stroke();
+}
+}
+
+async function startCamera(){
+
+const constraints={
+
+audio:false,
+
+video:{
+
+deviceId:
+deviceId
+? {exact:deviceId}
+: undefined,
+
+width:{ideal:1280},
+height:{ideal:720},
+
+facingMode:
+isMobile
+? 'user'
+: undefined
+}
+};
+
+const stream=
+await navigator
+.mediaDevices
+.getUserMedia(constraints);
+
+video.srcObject=stream;
+
+await video.play();
+
+canvas.width=
+video.videoWidth;
+
+canvas.height=
+video.videoHeight;
+
+canvas.style.aspectRatio=
+`${video.videoWidth}/${video.videoHeight}`;
+
+createBackground();
+
+outputStream=
+canvas.captureStream(30);
+
+window.skeletonStream=
+outputStream;
+
+document
+.getElementById('dot-cam')
+.classList.add('active');
+
+return stream;
 }
 
 async function initTracker(){
 
-  const stream = await navigator.mediaDevices.getUserMedia({
+await startCamera();
 
-    audio:false,
+const holistic=
+new Holistic({
 
-    video:{
-      width:{ideal:isMobile ? 1280 : 960},
-      height:{ideal:isMobile ? 720 : 540},
+locateFile:f=>
+`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`
+});
 
-      facingMode:isMobile
-        ? {ideal:'environment'}
-        : 'user'
-    }
-  });
+holistic.setOptions({
 
-  video.srcObject = stream;
+modelComplexity:1,
+smoothLandmarks:true
+});
 
-  video.setAttribute('playsinline', true);
-  video.setAttribute('webkit-playsinline', true);
-  video.muted = true;
+holistic.onResults(
+r=>latestResults=r
+);
 
-  await video.play();
+cameraInstance=
+new Camera(video,{
 
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+onFrame:async()=>{
 
-  canvas.style.aspectRatio =
-    `${video.videoWidth} / ${video.videoHeight}`;
+await holistic.send({
+image:video
+});
+},
 
-  createBackground();
+width:canvas.width,
+height:canvas.height
+});
 
-  outputStream = canvas.captureStream(30);
-  window.skeletonStream = outputStream;
+cameraInstance.start();
 
-  document.getElementById('dot-cam')
-    .classList.add('active');
+document
+.getElementById('dot-model')
+.classList.add('active');
 
-  const holistic = new Holistic({
-    locateFile:f=>
-      `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`
-  });
+document
+.getElementById('overlay')
+.classList.add('hidden');
 
-  holistic.setOptions({
-    modelComplexity:1,
-    smoothLandmarks:true,
-    enableSegmentation:false,
-    refineFaceLandmarks:false
-  });
-
-  holistic.onResults(r=>latestResults=r);
-
-  new Camera(video,{
-
-    onFrame:async()=>{
-
-      const now = performance.now();
-
-      if(now-lastInference<33) return;
-
-      lastInference = now;
-
-      await holistic.send({image:video});
-    },
-
-    width:canvas.width,
-    height:canvas.height
-
-  }).start();
-
-  document.getElementById('dot-model')
-    .classList.add('active');
-
-  document.getElementById('overlay')
-    .classList.add('hidden');
-
-  document.getElementById('toggleCam').onclick = ()=>{
-
-    showCamera = !showCamera;
-
-    document.getElementById('toggleCam').textContent =
-      showCamera ? 'HIDE CAM' : 'SHOW CAM';
-  };
-
-  document.getElementById('pipBtn').onclick = async ()=>{
-
-    if(!('documentPictureInPicture' in window)){
-
-      alert('Picture-in-Picture not supported');
-
-      return;
-    }
-
-    if(pipWindow){
-
-      pipWindow.close();
-
-      pipWindow = null;
-
-      return;
-    }
-
-    pipWindow =
-      await documentPictureInPicture.requestWindow({
-        width:480,
-        height:360
-      });
-
-    pipCanvas = document.createElement('canvas');
-
-    pipCanvas.width = canvas.width;
-    pipCanvas.height = canvas.height;
-
-    pipCanvas.style.width = '100%';
-    pipCanvas.style.height = '100%';
-
-    pipCtx = pipCanvas.getContext('2d');
-
-    pipWindow.document.body.style.margin = '0';
-
-    pipWindow.document.body.appendChild(pipCanvas);
-
-    pipWindow.addEventListener('pagehide', ()=>{
-
-      pipWindow = null;
-      pipCanvas = null;
-      pipCtx = null;
-    });
-  };
-
-  requestAnimationFrame(renderLoop);
+requestAnimationFrame(
+renderLoop
+);
 }
 
-function renderLoop(ts){
+document
+.getElementById('cameraPicker')
+.onclick=async()=>{
 
-  requestAnimationFrame(renderLoop);
+const devices=
+await navigator
+.mediaDevices
+.enumerateDevices();
 
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+const cams=
+devices.filter(
+d=>d.kind==='videoinput'
+);
 
-  ctx.drawImage(bgCanvas,0,0);
+const names=
+cams.map(
+(c,i)=>
+`${i}: ${c.label}`
+).join('\n');
 
-  if(showCamera){
+const pick=
+prompt(
+`Choose camera:\n${names}`
+);
 
-    ctx.save();
+if(pick===null)return;
 
-    ctx.globalAlpha = 0.35;
+deviceId=
+cams[Number(pick)]
+?.deviceId;
 
-    ctx.scale(-1,1);
+if(!deviceId)return;
 
-    ctx.drawImage(
-      video,
-      -canvas.width,
-      0,
-      canvas.width,
-      canvas.height
-    );
+video.srcObject
+?.getTracks()
+.forEach(
+t=>t.stop()
+);
 
-    ctx.restore();
-  }
+await startCamera();
+};
 
-  if(!latestResults) return;
+document
+.getElementById('toggleCam')
+.onclick=()=>{
 
-  const pose = latestResults.poseLandmarks;
+showCamera=
+!showCamera;
 
-  if(!pose || pose.length < 25) return;
+document
+.getElementById('toggleCam')
+.textContent=
 
-  const JOINTS = pose.map(lm => ({
-    x:(1-lm.x)*canvas.width,
-    y:lm.y*canvas.height
-  }));
+showCamera
+? 'HIDE CAM'
+: 'SHOW CAM';
+};
 
-  const torsoTop = {
-    x:(JOINTS[11].x + JOINTS[12].x)/2,
-    y:(JOINTS[11].y + JOINTS[12].y)/2
-  };
+document
+.getElementById('pipBtn')
+.onclick=async()=>{
 
-  const spineBase = {
-    x:(JOINTS[23].x + JOINTS[24].x)/2,
-    y:(JOINTS[23].y + JOINTS[24].y)/2
-  };
+if(!('documentPictureInPicture'
+in window)) return;
 
-  const neck = {
-    x:torsoTop.x,
-    y:torsoTop.y - 40
-  };
+if(pipWindow){
 
-  const extraPoints = {
+pipWindow.close();
 
-    neck,
+pipWindow=null;
 
-    spine:{
-      x:(torsoTop.x + spineBase.x)/2,
-      y:(torsoTop.y + spineBase.y)/2
-    },
+return;
+}
 
-    spineBase
-  };
+pipWindow=
+await documentPictureInPicture
+.requestWindow({
 
-  const BONES = [
+width:480,
+height:360
+});
 
-    ['chin','neck'],
+pipCanvas=
+document.createElement('canvas');
 
-    ['neck','spine'],
-    ['spine','spineBase'],
+pipCanvas.width=
+canvas.width;
 
-    [11,12],
+pipCanvas.height=
+canvas.height;
 
-    [11,13],
-    [13,15],
+pipCtx=
+pipCanvas.getContext('2d');
 
-    [12,14],
-    [14,16],
+pipWindow.document.body
+.style.margin='0';
 
-    [23,24],
+pipWindow.document.body
+.appendChild(
+pipCanvas
+);
+};
 
-    [23,25],
-    [25,27],
-    [27,31],
+function renderLoop(){
 
-    [24,26],
-    [26,28],
-    [28,32]
-  ];
+requestAnimationFrame(
+renderLoop
+);
 
-  const FACE = latestResults.faceLandmarks;
+ctx.clearRect(
+0,0,
+canvas.width,
+canvas.height
+);
 
-  if(FACE){
+ctx.drawImage(
+bgCanvas,
+0,0
+);
 
-    const facePts = FACE.map(lm => ({
-      x:(1-lm.x)*canvas.width,
-      y:lm.y*canvas.height
-    }));
+if(showCamera){
 
-    extraPoints.chin = facePts[152];
+ctx.save();
 
-    const MOUTH =
-      [61,291,13,17];
+ctx.globalAlpha=.35;
 
-    for(const i of MOUTH){
+ctx.scale(-1,1);
 
-      const p = facePts[i];
+ctx.drawImage(
+video,
+-canvas.width,
+0,
+canvas.width,
+canvas.height
+);
 
-      ctx.beginPath();
+ctx.restore();
+}
 
-      ctx.arc(p.x,p.y,2.3,0,Math.PI*2);
+if(!latestResults) return;
 
-      ctx.fill();
-    }
-  }
+const pose=
+latestResults.poseLandmarks;
 
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = '#00f5ff';
-  ctx.fillStyle = '#00f5ff';
+if(!pose) return;
 
-  for(const [a,b] of BONES){
+const JOINTS=
+pose.map(
+lm=>({
 
-    const p1 =
-      typeof a === 'number'
-      ? JOINTS[a]
-      : extraPoints[a];
+x:(1-lm.x)
+*canvas.width,
 
-    const p2 =
-      typeof b === 'number'
-      ? JOINTS[b]
-      : extraPoints[b];
+y:lm.y
+*canvas.height
+})
+);
 
-    if(!p1 || !p2) continue;
+const shoulder={
 
-    ctx.beginPath();
+x:(JOINTS[11].x+
+JOINTS[12].x)/2,
 
-    ctx.moveTo(p1.x,p1.y);
+y:(JOINTS[11].y+
+JOINTS[12].y)/2
+};
 
-    ctx.lineTo(p2.x,p2.y);
+const hips={
 
-    ctx.stroke();
-  }
+x:(JOINTS[23].x+
+JOINTS[24].x)/2,
 
-  if(pipCtx && pipCanvas){
+y:(JOINTS[23].y+
+JOINTS[24].y)/2
+};
 
-    pipCtx.clearRect(
-      0,
-      0,
-      pipCanvas.width,
-      pipCanvas.height
-    );
+const neck={
 
-    pipCtx.drawImage(canvas,0,0);
-  }
+x:shoulder.x,
+y:shoulder.y-40
+};
+
+const extra={
+
+neck,
+
+spine:{
+
+x:(neck.x+
+hips.x)/2,
+
+y:(neck.y+
+hips.y)/2
+},
+
+hips
+};
+
+const BONES=[
+
+['chin','neck'],
+
+['neck','spine'],
+['spine','hips'],
+
+[11,12],
+[23,24],
+
+[11,13],[13,15],
+[12,14],[14,16],
+
+[11,23],
+[12,24],
+
+[23,25],[25,27],[27,31],
+[24,26],[26,28],[28,32]
+];
+
+const FACE=
+latestResults.faceLandmarks;
+
+if(FACE){
+
+const pts=
+FACE.map(
+lm=>({
+
+x:(1-lm.x)
+*canvas.width,
+
+y:lm.y
+*canvas.height
+})
+);
+
+extra.chin=
+pts[152];
+
+const LEFT_EYE=
+[33,133,159,145,33];
+
+const RIGHT_EYE=
+[362,263,386,374,362];
+
+const MOUTH=
+[61,291,13,17];
+
+for(const i of
+[...LEFT_EYE,
+...RIGHT_EYE,
+...MOUTH]){
+
+ctx.beginPath();
+
+ctx.arc(
+pts[i].x,
+pts[i].y,
+2.5,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+}
+}
+
+ctx.strokeStyle=
+'#00f5ff';
+
+ctx.fillStyle=
+'#00f5ff';
+
+for(const [a,b]
+of BONES){
+
+const p1=
+typeof a==='number'
+? JOINTS[a]
+: extra[a];
+
+const p2=
+typeof b==='number'
+? JOINTS[b]
+: extra[b];
+
+if(!p1||!p2)
+continue;
+
+ctx.beginPath();
+
+ctx.moveTo(
+p1.x,p1.y
+);
+
+ctx.lineTo(
+p2.x,p2.y
+);
+
+ctx.stroke();
+}
+
+const HANDS=[
+
+latestResults
+.leftHandLandmarks,
+
+latestResults
+.rightHandLandmarks
+];
+
+const HAND_CONN=[
+
+[0,1],[1,2],[2,3],[3,4],
+
+[0,5],[5,6],[6,7],[7,8],
+
+[0,9],[9,10],[10,11],[11,12],
+
+[0,13],[13,14],[14,15],[15,16],
+
+[0,17],[17,18],[18,19],[19,20]
+];
+
+for(const hand
+of HANDS){
+
+if(!hand)
+continue;
+
+const pts=
+hand.map(
+lm=>({
+
+x:(1-lm.x)
+*canvas.width,
+
+y:lm.y
+*canvas.height
+})
+);
+
+for(const [a,b]
+of HAND_CONN){
+
+ctx.beginPath();
+
+ctx.moveTo(
+pts[a].x,
+pts[a].y
+);
+
+ctx.lineTo(
+pts[b].x,
+pts[b].y
+);
+
+ctx.stroke();
+}
+
+for(const p of pts){
+
+ctx.beginPath();
+
+ctx.arc(
+p.x,
+p.y,
+2.2,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+}
+}
+
+if(pipCtx){
+
+pipCtx.clearRect(
+0,0,
+pipCanvas.width,
+pipCanvas.height
+);
+
+pipCtx.drawImage(
+canvas,
+0,0
+);
+}
 }
 
 </script>
