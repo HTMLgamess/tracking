@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 
+<!-- ADDED -->
 <script>
 if ('documentPictureInPicture' in window) {
   console.log('Document Picture-in-Picture supported');
@@ -133,19 +134,11 @@ button{
   font-family:'Orbitron'
 }
 
+/* ADDED */
 #pipBtn{
   position:fixed;
   bottom:20px;
   left:140px;
-  z-index:100;
-  padding:8px 12px;
-  cursor:pointer;
-}
-
-#virtualCamBtn{
-  position:fixed;
-  bottom:20px;
-  left:260px;
   z-index:100;
   padding:8px 12px;
   cursor:pointer;
@@ -181,19 +174,12 @@ button{
 </div>
 
 <button id="toggleCam"
-style="
-position:fixed;
-bottom:20px;
-left:20px;
-z-index:100;
-padding:8px 12px;
-cursor:pointer">
+style="position:fixed;bottom:20px;left:20px;z-index:100;padding:8px 12px;cursor:pointer">
 SHOW CAM
 </button>
 
+<!-- ADDED -->
 <button id="pipBtn">POP OUT</button>
-
-<button id="virtualCamBtn">ENABLE WEBCAM OUTPUT</button>
 
 <div id="stats">
 FPS: <span id="fps-val">--</span><br>
@@ -206,7 +192,13 @@ HANDS: <span id="hand-count">0</span>
 <button onclick="initTracker()">INITIALISE</button>
 </div>
 
-<video id="video" playsinline autoplay muted></video>
+<!-- MOBILE FIX -->
+<video id="video"
+playsinline
+webkit-playsinline
+autoplay
+muted>
+</video>
 
 <script>
 
@@ -228,32 +220,38 @@ let lastUIUpdate = 0;
 let lastInference = 0;
 let showCamera = false;
 
+/* ADDED */
 let pipWindow = null;
 let pipCanvas = null;
 let pipCtx = null;
 
-/* VIRTUAL WEBCAM */
-let virtualStream = null;
-let virtualPreview = null;
+/* MOBILE SUPPORT ADDED */
+let isMobile =
+  /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 function createBackground(){
 
   bgCanvas = document.createElement('canvas');
+
   bgCanvas.width = canvas.width;
   bgCanvas.height = canvas.height;
 
   const bg = bgCanvas.getContext('2d');
+
   const step = 40;
 
   bg.strokeStyle = 'rgba(0,245,255,0.04)';
+
   bg.beginPath();
 
   for(let x=0;x<canvas.width;x+=step){
+
     bg.moveTo(x,0);
     bg.lineTo(x,canvas.height);
   }
 
   for(let y=0;y<canvas.height;y+=step){
+
     bg.moveTo(0,y);
     bg.lineTo(canvas.width,y);
   }
@@ -263,26 +261,45 @@ function createBackground(){
 
 async function initTracker(){
 
+  /* MOBILE CAMERA SUPPORT ADDED */
   const stream = await navigator.mediaDevices.getUserMedia({
+
+    audio:false,
+
     video:{
-      width:{ideal:960},
-      height:{ideal:540},
-      facingMode:'user'
+      width:{ideal:isMobile ? 1280 : 960},
+      height:{ideal:isMobile ? 720 : 540},
+
+      facingMode:isMobile
+        ? {ideal:'environment'}
+        : 'user'
     }
   });
 
   video.srcObject = stream;
+
+  /* iPHONE SAFARI FIXES */
+  video.setAttribute('playsinline', true);
+  video.setAttribute('webkit-playsinline', true);
+  video.muted = true;
+
   await video.play();
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
+  /* MOBILE ASPECT RATIO FIX */
+  canvas.style.aspectRatio =
+    `${video.videoWidth} / ${video.videoHeight}`;
+
   createBackground();
 
-  document.getElementById('dot-cam').classList.add('active');
+  document.getElementById('dot-cam')
+    .classList.add('active');
 
   const holistic = new Holistic({
-    locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`
+    locateFile:f=>
+      `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`
   });
 
   holistic.setOptions({
@@ -295,7 +312,9 @@ async function initTracker(){
   holistic.onResults(r=>latestResults=r);
 
   new Camera(video,{
+
     onFrame:async()=>{
+
       const now = performance.now();
 
       if(now-lastInference<33) return;
@@ -310,33 +329,44 @@ async function initTracker(){
 
   }).start();
 
-  document.getElementById('dot-model').classList.add('active');
-  document.getElementById('overlay').classList.add('hidden');
+  document.getElementById('dot-model')
+    .classList.add('active');
+
+  document.getElementById('overlay')
+    .classList.add('hidden');
 
   document.getElementById('toggleCam').onclick = ()=>{
+
     showCamera = !showCamera;
+
     document.getElementById('toggleCam').textContent =
       showCamera ? 'HIDE CAM' : 'SHOW CAM';
   };
 
-  /* POP OUT */
+  /* ADDED */
   document.getElementById('pipBtn').onclick = async ()=>{
 
     if(!('documentPictureInPicture' in window)){
-      alert('Picture-in-Picture not supported');
+
+      alert('Picture-in-Picture not supported in this browser');
+
       return;
     }
 
     if(pipWindow){
+
       pipWindow.close();
+
       pipWindow = null;
+
       return;
     }
 
-    pipWindow = await documentPictureInPicture.requestWindow({
-      width:480,
-      height:360
-    });
+    pipWindow =
+      await documentPictureInPicture.requestWindow({
+        width:480,
+        height:360
+      });
 
     pipCanvas = document.createElement('canvas');
 
@@ -349,57 +379,17 @@ async function initTracker(){
     pipCtx = pipCanvas.getContext('2d');
 
     pipWindow.document.body.style.margin = '0';
+
     pipWindow.document.body.style.background = '#0a0a14';
 
     pipWindow.document.body.appendChild(pipCanvas);
 
     pipWindow.addEventListener('pagehide', ()=>{
+
       pipWindow = null;
       pipCanvas = null;
       pipCtx = null;
     });
-  };
-
-  /* VIRTUAL CAMERA OUTPUT */
-  document.getElementById('virtualCamBtn').onclick = async ()=>{
-
-    if(virtualStream) return;
-
-    virtualStream = canvas.captureStream(60);
-
-    window.virtualSkeletonCamera = virtualStream;
-
-    document.getElementById('virtualCamBtn').textContent =
-      'WEBCAM ACTIVE';
-
-    virtualPreview = document.createElement('video');
-
-    virtualPreview.srcObject = virtualStream;
-    virtualPreview.autoplay = true;
-    virtualPreview.muted = true;
-    virtualPreview.playsInline = true;
-
-    virtualPreview.style.position = 'fixed';
-    virtualPreview.style.top = '20px';
-    virtualPreview.style.right = '20px';
-    virtualPreview.style.width = '220px';
-    virtualPreview.style.border = '2px solid #00f5ff';
-    virtualPreview.style.zIndex = '999';
-
-    document.body.appendChild(virtualPreview);
-
-    alert(
-`Virtual webcam stream active.
-
-USE WITH OBS:
-
-1. Open OBS Studio
-2. Add Browser Source
-3. Load this webpage
-4. Start OBS Virtual Camera
-5. Select "OBS Virtual Camera"
-   in Discord / Zoom / etc`
-    );
   };
 
   requestAnimationFrame(renderLoop);
@@ -415,11 +405,11 @@ function renderLoop(ts){
 
   if(ts-lastFpsClock>1000){
 
-    fps = Math.round(
-      frameCount*1000/(ts-lastFpsClock)
-    );
+    fps =
+      Math.round(frameCount*1000/(ts-lastFpsClock));
 
     frameCount = 0;
+
     lastFpsClock = ts;
   }
 
@@ -449,8 +439,12 @@ function renderLoop(ts){
   if(!latestResults) return;
 
   const pose = latestResults.poseLandmarks;
-  const leftHand = latestResults.leftHandLandmarks;
-  const rightHand = latestResults.rightHandLandmarks;
+
+  const leftHand =
+    latestResults.leftHandLandmarks;
+
+  const rightHand =
+    latestResults.rightHandLandmarks;
 
   const detected = !!(pose && pose.length);
 
@@ -458,9 +452,11 @@ function renderLoop(ts){
 
     lastUIUpdate = ts;
 
-    fpsEl.textContent = fps || fpsEl.textContent;
+    fpsEl.textContent =
+      fps || fpsEl.textContent;
 
-    jointEl.textContent = pose ? pose.length : 0;
+    jointEl.textContent =
+      pose ? pose.length : 0;
 
     handEl.textContent =
       (leftHand?1:0)+(rightHand?1:0);
@@ -499,12 +495,16 @@ function renderLoop(ts){
     const rightAnkle = JOINTS[28];
 
     spineBase.x =
-      (JOINTS[23].x + JOINTS[24].x +
-       leftAnkle.x + rightAnkle.x) / 4;
+      (JOINTS[23].x +
+      JOINTS[24].x +
+      leftAnkle.x +
+      rightAnkle.x) / 4;
 
     spineBase.y =
-      (JOINTS[23].y + JOINTS[24].y +
-       leftAnkle.y + rightAnkle.y) / 4;
+      (JOINTS[23].y +
+      JOINTS[24].y +
+      leftAnkle.y +
+      rightAnkle.y) / 4;
   }
 
   const neck = {
@@ -512,17 +512,24 @@ function renderLoop(ts){
     y:(torsoTop.y + spineBase.y)/2
   };
 
+  /* FIXED + ADDED BODY CONNECTIONS */
   const BONES = [
 
     ['torsoTop','neck'],
     ['neck','chin'],
 
     [11,12],
+
     [11,13],
     [13,15],
 
     [12,14],
     [14,16],
+
+    /* BODY */
+    [11,23],
+    [12,24],
+    [23,24],
 
     [23,25],
     [25,27],
@@ -536,7 +543,6 @@ function renderLoop(ts){
   const extraPoints = {
 
     neck,
-
     torsoTop,
 
     spine:{
@@ -565,9 +571,112 @@ function renderLoop(ts){
     if(!p1 || !p2) continue;
 
     ctx.beginPath();
+
     ctx.moveTo(p1.x,p1.y);
+
     ctx.lineTo(p2.x,p2.y);
+
     ctx.stroke();
+  }
+
+  const FACE = latestResults.faceLandmarks;
+
+  if(FACE){
+
+    const facePts = FACE.map(lm => ({
+      x:(1-lm.x)*canvas.width,
+      y:lm.y*canvas.height
+    }));
+
+    const chin = facePts[152];
+
+    neck.x = chin.x;
+    neck.y = chin.y + 12;
+
+    /* FIXED CHIN CONNECTION */
+    extraPoints.chin = {
+      x:chin.x,
+      y:chin.y
+    };
+
+    const OUTLINE = [
+      10,297,284,389,454,361,397,379,400,
+      152,176,150,172,132,234,162,54,67,10
+    ];
+
+    const LEFT_EYE = [33,133,159,145,33];
+
+    const RIGHT_EYE =
+      [362,263,386,374,362];
+
+    const NOSE =
+      [168,6,197,195,5,4];
+
+    const MOUTH =
+      [61,291,13,14,17];
+
+    ctx.lineWidth = 1.3;
+
+    for(let i=0;i<OUTLINE.length-1;i++){
+
+      const a = facePts[OUTLINE[i]];
+      const b = facePts[OUTLINE[i+1]];
+
+      ctx.beginPath();
+
+      ctx.moveTo(a.x,a.y);
+
+      ctx.lineTo(b.x,b.y);
+
+      ctx.stroke();
+    }
+
+    for(const i of LEFT_EYE){
+
+      const p = facePts[i];
+
+      ctx.beginPath();
+
+      ctx.arc(p.x,p.y,2.8,0,Math.PI*2);
+
+      ctx.fill();
+    }
+
+    for(const i of RIGHT_EYE){
+
+      const p = facePts[i];
+
+      ctx.beginPath();
+
+      ctx.arc(p.x,p.y,2.8,0,Math.PI*2);
+
+      ctx.fill();
+    }
+
+    for(let i=0;i<NOSE.length-1;i++){
+
+      const a = facePts[NOSE[i]];
+      const b = facePts[NOSE[i+1]];
+
+      ctx.beginPath();
+
+      ctx.moveTo(a.x,a.y);
+
+      ctx.lineTo(b.x,b.y);
+
+      ctx.stroke();
+    }
+
+    for(const i of MOUTH){
+
+      const p = facePts[i];
+
+      ctx.beginPath();
+
+      ctx.arc(p.x,p.y,2.3,0,Math.PI*2);
+
+      ctx.fill();
+    }
   }
 
   const HANDS = [
@@ -596,15 +705,9 @@ function renderLoop(ts){
 
       ctx.beginPath();
 
-      ctx.moveTo(
-        pts[a].x,
-        pts[a].y
-      );
+      ctx.moveTo(pts[a].x,pts[a].y);
 
-      ctx.lineTo(
-        pts[b].x,
-        pts[b].y
-      );
+      ctx.lineTo(pts[b].x,pts[b].y);
 
       ctx.stroke();
     }
@@ -613,19 +716,13 @@ function renderLoop(ts){
 
       ctx.beginPath();
 
-      ctx.arc(
-        p.x,
-        p.y,
-        2.5,
-        0,
-        Math.PI*2
-      );
+      ctx.arc(p.x,p.y,2.5,0,Math.PI*2);
 
       ctx.fill();
     }
   }
 
-  /* UPDATE POP OUT WINDOW */
+  /* ADDED */
   if(pipCtx && pipCanvas){
 
     pipCtx.clearRect(
@@ -635,13 +732,10 @@ function renderLoop(ts){
       pipCanvas.height
     );
 
-    pipCtx.drawImage(
-      canvas,
-      0,
-      0
-    );
+    pipCtx.drawImage(canvas,0,0);
   }
 }
+
 </script>
 </body>
 </html>
