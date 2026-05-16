@@ -110,8 +110,8 @@ ideal:480
 },
 
 frameRate:{
-ideal:30,
-max:30
+ideal:60,
+max:60
 }
 }
 });
