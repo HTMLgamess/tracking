@@ -177,7 +177,7 @@ hips
 };
 
 
-ctx.lineWidth=4;
+ctx.lineWidth=2;
 ctx.strokeStyle='#00f5ff';
 ctx.fillStyle='#00f5ff';
 
