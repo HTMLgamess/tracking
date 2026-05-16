@@ -177,7 +177,7 @@ hips
 };
 
 
-ctx.lineWidth=2;
+ctx.lineWidth=4;
 ctx.strokeStyle='#00f5ff';
 ctx.fillStyle='#00f5ff';
 
@@ -311,10 +311,10 @@ const FACE_BONES=[
 
 /* face core */
 [0,1],
-[0,2],
+[0,],
 [0,3],
 [1,3],
-[2,3],
+[,3],
 
 /* nose */
 [3,4],
@@ -327,7 +327,7 @@ const FACE_BONES=[
 
 /* cheeks */
 [8,1],
-[9,2],
+[9,],
 
 /* face frame */
 [8,6],
@@ -338,11 +338,11 @@ const FACE_BONES=[
 
 /* temples to crown */
 [11,10],
-[12,10],
+[1,10],
 
 /* connect back INTO face only (no outward leaks) */
 [11,8],
-[12,9]
+[1,9]
 ];
 
 
@@ -354,7 +354,7 @@ of FACE_BONES
 const p1=
 facePts[a];
 
-const p2=
+const p=
 facePts[b];
 
 
@@ -363,12 +363,12 @@ SAFETY CHECK (prevents stray lines)
 */
 if(
 !p1||
-!p2
+!p
 ||
 isNaN(p1.x)||
 isNaN(p1.y)||
-isNaN(p2.x)||
-isNaN(p2.y)
+isNaN(p.x)||
+isNaN(p.y)
 )
 continue;
 
@@ -381,7 +381,7 @@ p1.y
 );
 
 ctx.lineTo(
-p2.x,
+p.x,
 p2.y
 );
 
